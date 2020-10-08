@@ -7,6 +7,9 @@
 #ifndef _ECU_DIANT_TIMER_H
 #define _ECU_DIANT_TIMER_H
 
+
+#include "ECU_Diant_PIO.h"
+
 //********************************************************************************
 //                             #defines
 //********************************************************************************
@@ -77,7 +80,7 @@ uint32_t *pPMC_PCER1 = (uint32_t*)(PMC_PCER1);
 uint32_t *pPMC_PCSR0 = (uint32_t*)(PMC_PCSR0);
 uint32_t *pPMC_SR    = (uint32_t*)(PMC_SR);
 
-uint32_t *pPIOB_PDR = (uint32_t*)(PIOB_PDR);
+//uint32_t *pPIOB_PDR = (uint32_t*)(PIOB_PDR);
 uint32_t *pPIOB_ABSR = (uint32_t*)(PIOB_ABSR);
 uint32_t *pPIOB_ODR = (uint32_t*)(PIOB_ODR);
 

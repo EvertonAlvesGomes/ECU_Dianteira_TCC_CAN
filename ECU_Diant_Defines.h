@@ -29,7 +29,7 @@
 #endif
 
 #ifdef ENABLE_PERIPHERAL_COMMUNICATION
-  //#define ENABLE_PERIPHERAL_DEPLOYING //Habilita a implementação dos periféricos. Utilizar apenas durante o desenvolvimento dos códigos para essa implementação
+  #define ENABLE_PERIPHERAL_DEPLOYING //Habilita a implementação dos periféricos. Utilizar apenas durante o desenvolvimento dos códigos para essa implementação
 #endif
 
 //Se a implementação dos periféricos estiver habilitada, desabilita a comunicação CAN

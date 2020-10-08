@@ -102,9 +102,13 @@ void loop(){
   #ifdef ENABLE_PERIPHERAL_DEPLOYING
     //Leitura dos periféricos
     #ifdef ENABLE_SERIAL_COMMUNICATION
-      Serial.println(ler_adc(), HEX);
-      Serial.println(ler_timer_0_counter(), HEX);
-      Serial.println(ler_timer_0_status(), HEX);
+      Serial.print("ADC CH0: ");
+      Serial.println(adcReadChannel(ADC_CH0));
+      Serial.print("ADC CH10: ");
+      Serial.println(adcReadChannel(ADC_CH10));
+      /*Serial.print("Status: ");
+      Serial.println(ADC_ISR, HEX);*/
+
     #endif
 
   #endif

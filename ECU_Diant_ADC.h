@@ -93,16 +93,37 @@
 //Adc myADC; //struct ADC
 
 
+#include "ECU_Diant_PIO.h"
+
+
 //********************************************************************************
 //                             #defines
 //********************************************************************************
 
-#define ADC_WPKEY 0x414443  //Write Protection Key
-#define SUT64     1         //Start Up Time
-#define PRESCAL   0x0F      //Prescaler for ADC Clock
-#define TRACKTIM  0x01      //Tracking time
-#define TRANSFER  0x10      //Transfer time
-#define ADC_ID    37
+#define ADC_WPKEY           0x414443  //Write Protection Key
+#define SUT64               1         //Start Up Time
+#define PRESCAL             0x0F      //Prescaler for ADC Clock
+#define TRACKTIM            0x01      //Tracking time
+#define TRANSFER            0x10      //Transfer time
+#define ADC_ID              37
+#define ADC_BASE_ADDRESS    0x400C0000  //Base registers address
+#define ADC_CH0             0x00        //Channel 0 index
+#define ADC_CH1             0x01        //Channel 1 index
+#define ADC_CH2             0x02        //Channel 2 index
+#define ADC_CH3             0x03        //Channel 3 index
+#define ADC_CH4             0x04        //Channel 4 index
+#define ADC_CH5             0x05        //Channel 5 index
+#define ADC_CH6             0x06        //Channel 6 index
+#define ADC_CH7             0x07        //Channel 7 index
+#define ADC_CH8             0x08        //Channel 8 index
+#define ADC_CH9             0x09        //Channel 9 index
+#define ADC_CH10            0x0A        //Channel 10 index
+#define ADC_CH11            0x0B        //Channel 11 index
+#define ADC_CH12            0x0C        //Channel 12 index
+#define ADC_CH13            0x0D        //Channel 13 index
+#define ADC_CH14            0x0E        //Channel 14 index
+#define ADC_CH15            0x0F        //Channel 15 index
+#define ADC_CH10_PIN        17          //Pin from Port B for ADC channel 10 (analong input 8) 
 
 //********************************************************************************
 //                             Registradores
@@ -126,7 +147,7 @@
 #define ADC_CGR     REG_ADC_CGR     //Channel Gain Register
 #define ADC_COR     REG_ADC_COR     //Channel Offset Register
 #define ADC_CDR0    REG_ADC_CDR     //Channel Data Register 0
-#define ADC_CDR1    myADC.ADC_CDR[1]    //Channel Data Register 1 
+#define ADC_CDR1    (ADC_BASE_ADDRESS+0x54)    //Channel Data Register 1
 #define ADC_CDR2    REG_ADC_CDR2    //Channel Data Register 2
 #define ADC_CDR3    REG_ADC_CDR3    //Channel Data Register 3
 #define ADC_CDR4    REG_ADC_CDR4    //Channel Data Register 4
@@ -135,7 +156,7 @@
 #define ADC_CDR7    REG_ADC_CDR7    //Channel Data Register 7
 #define ADC_CDR8    REG_ADC_CDR8    //Channel Data Register 8
 #define ADC_CDR9    REG_ADC_CDR9    //Channel Data Register 9
-#define ADC_CDR10   REG_ADC_CDR10   //Channel Data Register 10
+#define ADC_CDR10   (ADC_BASE_ADDRESS+(0x50+4*0x0A))   //Channel Data Register 10
 #define ADC_CDR11   REG_ADC_CDR11   //Channel Data Register 11
 #define ADC_CDR12   REG_ADC_CDR12   //Channel Data Register 12
 #define ADC_CDR13   REG_ADC_CDR13   //Channel Data Register 13
@@ -148,6 +169,8 @@
 #define PMC_PCER1   REG_PMC_PCER1   //PMC Peripheral Clock Enable Register 0
 
 
+uint32_t *pADC_CDR10 = (uint32_t*)ADC_CDR10;
+
 //********************************************************************************
 //                             Funções
 //********************************************************************************
@@ -155,6 +178,7 @@
 
 void pioAdcConfig(){
   PIOA_PDR |= 0x01 << 2; //Habilita o pino PA2 para ser controlado pelo periférico (ADC)
+  ecu_diant_piob_disable_pin_controlling(ADC_CH10_PIN);  //Habilita o pino PB17 (canal 10, entrada analógica 8) para ser controlado pelo AD
   //PIOB_ABSR |= 0x01 << 25;  //Configura a função periférica do pino
 }
 
@@ -174,7 +198,8 @@ void adcConfig(){
   ADC_MR |= TRACKTIM << 24; //Setting tracking time
   ADC_MR |= TRANSFER << 28; //Setting transfer time
 
-  ADC_CHER |= 0x01 << 0;  //Enabling channel 0
+  ADC_CHER |= 1 << ADC_CH0;        //Habilita canal 0 -> analog input 7
+  ADC_CHER |= 1 << ADC_CH10;          //Habilita canal 10 -> analog input 8
 
   ADC_CGR = 0; //All channels have gain 1
   ADC_COR |= 0x00 << 16; //Enable single ended mode for channel 0
@@ -198,6 +223,22 @@ uint16_t adcRead(){
   }
   //return ADC_LCDR;
   //return ADC_CDR0;
+}
+
+
+/*
+ * adcReadChannel(uint8_t ch)
+ * Retorna o valor do canal <ch> do ADC. Obrigatoriamente <ch> deve estar em formato hexadecimal.
+ */
+uint16_t adcReadChannel(uint8_t ch){
+  
+  uint32_t *pADC_channel_register = (uint32_t*)(ADC_BASE_ADDRESS + 0x50 + 4*ch);    //determinando o endereço do registrador do canal a ser lido
+  //uint32_t *pADC_channel_register = (uint32_t*)(ADC_BASE_ADDRESS + 0x50);    //determinando o endereço do registrador de dados do canal 0
+  ADC_CR |= 1 << 1;   //inicia a conversão
+  while(!(ADC_ISR & (1 << ch))){
+    ;   //aguarda o fim da conversão
+  }
+  return *pADC_channel_register;
 }
 
 #endif
