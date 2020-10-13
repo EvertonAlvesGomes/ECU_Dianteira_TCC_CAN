@@ -1,12 +1,12 @@
-/* ECU_Diant_SensPressao.h
+/* ECU_Diant_SensVelocidade.h
  *  Implementação da leitura do sensor de velocidade.
  *  Autor: Everton A. Gomes
  *  Data: 19/09/2020
 */
 
 
-#ifndef _ECU_DIANT_SENSVELOCIDADE_
-#define _ECU_DIANT_SENSVELOCIDADE_
+#ifndef _ECU_DIANT_SENSVELOCIDADE_H
+#define _ECU_DIANT_SENSVELOCIDADE_H
 
 
 //********************************************************************************
@@ -29,18 +29,18 @@ uint32_t result=0;
 //                             Funções
 //********************************************************************************
 
-/* void velocidade_meas_config()
+/* void ecu_diant_sens_velocidade_meas_config()
  *  Configuração do timer para medição da velocidade.
 */
-void velocidade_meas_config(){
-  tc0config();    //configuração do timer_0 para medição de velocidade
-  captureConfig();    //modo de captura do timer_0
+void ecu_diant_sens_velocidade_meas_config(){
+  ecu_diant_timer0_config();    //configuração do timer_0 para medição de velocidade
+  ecu_diant_timer0_capturemode_config();    //modo de captura do timer_0
 }
 
 /* uint16_t calculaVelocidade()
  *  Retorna o valor da velocidade atual.
 */
-uint16_t calcula_velocidade(){
+uint16_t ecu_diant_sens_velocidade_calcula_velocidade(){
   
   if(ra_atual != ra_prev){
     result = ra_atual - ra_prev;

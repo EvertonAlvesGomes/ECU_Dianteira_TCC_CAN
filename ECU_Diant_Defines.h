@@ -25,11 +25,11 @@
 //********************************************************************************
 
 #ifdef ENABLE_CAN_COMMUNICATION
-  #define ENABLE_CAN_DEPLOYING        //Utilizar apenas durante o uso de valores aleatórios para testar o CAN
+  //#define ENABLE_CAN_DEPLOYING        //Utilizar apenas durante o uso de valores aleatórios para testar o CAN
 #endif
 
 #ifdef ENABLE_PERIPHERAL_COMMUNICATION
-  #define ENABLE_PERIPHERAL_DEPLOYING //Habilita a implementação dos periféricos. Utilizar apenas durante o desenvolvimento dos códigos para essa implementação
+  //#define ENABLE_PERIPHERAL_DEPLOYING //Habilita a implementação dos periféricos. Utilizar apenas durante o desenvolvimento dos códigos para essa implementação
 #endif
 
 //Se a implementação dos periféricos estiver habilitada, desabilita a comunicação CAN

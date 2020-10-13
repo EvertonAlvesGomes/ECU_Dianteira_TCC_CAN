@@ -16,6 +16,7 @@
 #include "ECU_Diant_SensVelocidade.h"
 #include "ECU_Diant_CAN_Deploying.h"
 #include "ECU_Diant_Peripheral_Deploying.h"
+#include "ECU_Diant_Temp.h"
 
 
 //********************************************************************************
@@ -23,8 +24,9 @@
 //********************************************************************************
 
 uint16_t velD = 0;      //velocidade dianteira
-uint16_t tempD = 0 ;    //temperatura disco dianteiro
+//uint16_t tempD = 0 ;    //temperatura disco dianteiro
 float pressD = 0;       //pressão freio dianteiro
+
 uint8_t tick = 0;       //temporizador de inicialização do CAN
 
 
@@ -33,12 +35,14 @@ void setup(){
     Serial.begin(9600);
   #endif
 
-  //Configura medição das grandezas se PERIPHERAL_COMMUNICATION estiver habilitado
+  //Configura medição das grandezas se ENABLE_PERIPHERAL_COMMUNICATION estiver habilitado
   #ifdef ENABLE_PERIPHERAL_COMMUNICATION 
-    velocidade_meas_config();     //configura medição de velocidade
-    sens_pressao_meas_config();   //configura medição de pressão
+    ecu_diant_adc_config();   //configura o conversor AD
+    ecu_diant_sens_velocidade_meas_config();     //configura medição de velocidade
+    ecu_diant_sens_pressao_meas_config();   //configura medição de pressão
+    ecu_diant_temp_meas_config();   //configura medição de temperatura
   #endif
-
+  
   #ifdef ENABLE_CAN_COMMUNICATION
     startCan();   //inicializa interface CAN
     
@@ -60,7 +64,7 @@ void setup(){
       Serial.println("CAN Inicializado.\n\n");
     #endif
     
-    can_enable_interrupts(ENABLE_MB1_INTERRUPT | ENABLE_MB2_INTERRUPT);
+    can_enable_interrupts(ENABLE_MB1_INTERRUPT | ENABLE_MB2_INTERRUPT); //Habilita interrupção das mailboxes de recepção
   #endif
   
 }
@@ -69,7 +73,7 @@ void loop(){
   #ifdef ENABLE_CAN_COMMUNICATION
     tick = 0; //reinicia temporizador
 
-    //Se o CAN_DEPLOYING estiver habilitado, usam-se valores aleatórios para as grandezas medidas
+    //Se o ENABLE_CAN_DEPLOYING estiver habilitado, usam-se valores aleatórios para as grandezas medidas
     #ifdef ENABLE_CAN_DEPLOYING
       velD = velocidade_diant[random(0,100)];
       tempD = temp_diant[random(0,100)];
@@ -78,23 +82,21 @@ void loop(){
 
     //Se CAN_DEPLOYING não estiver habilitado, usam-se valores calculados pelos periféricos para as grandezas medidas
     #ifndef ENABLE_CAN_DEPLOYING
-      velD = calcula_velocidade();
-      pressD = calcula_pressao();
-      tempD = temp_diant[random(0,100)];
+      velD = ecu_diant_sens_velocidade_calcula_velocidade();
+      pressD = ecu_diant_sens_pressao_calcula_pressao();
+      ecu_diant_temp_calcula_temp();
     #endif
 
     /* Formatação da mensagem: 
      *  CAN_DATA_HIGH: MSB = 0, LSB = pressD
      *  CAN_DATA_LOW: MSB = tempD, LSB = velD 
     */
-    send_status = canSend(&can_mailbox_tx, ID_MB_TX, joinToSend(0,pressD), joinToSend(tempD,velD));
-    can_global_send_transfer_cmd(CAN0, (0x1u << MB_TX_INDEX));
+    send_status = canSend(&can_mailbox_tx, ID_MB_TX, ecu_diant_can_join_to_send(0,pressD), ecu_diant_can_join_to_send(tempD,velD));
+    can_global_send_transfer_cmd(CAN0, (0x1u << MB_TX_INDEX));  //envia comando para a mensagem ser inserida no barramento
 
     //Se a comunicação serial estiver habilitada, os dados são escritos na serial
     #ifdef ENABLE_SERIAL_COMMUNICATION
-      can_monitoring();
-      //Serial.println(*pCAN_SR, HEX);
-      //data_monitoring();
+      ecu_diant_can_can_monitoring();
     #endif
     
   #endif
@@ -102,10 +104,15 @@ void loop(){
   #ifdef ENABLE_PERIPHERAL_DEPLOYING
     //Leitura dos periféricos
     #ifdef ENABLE_SERIAL_COMMUNICATION
-      Serial.print("ADC CH0: ");
-      Serial.println(adcReadChannel(ADC_CH0));
+      //Serial.print("V: ");
+      Serial.println(ecu_diant_sens_velocidade_calcula_velocidade());
+      //Serial.print("P: ");
+      Serial.println(ecu_diant_sens_pressao_calcula_pressao());
+      Serial.println("");
+      /*Serial.print("ADC CH0: ");
+      Serial.println(ecu_diant_adc_read_channel(ADC_CH0));
       Serial.print("ADC CH10: ");
-      Serial.println(adcReadChannel(ADC_CH10));
+      Serial.println(ecu_diant_adc_read_channel(ADC_CH10));*/
       /*Serial.print("Status: ");
       Serial.println(ADC_ISR, HEX);*/
 
@@ -123,7 +130,7 @@ void loop(){
 
 //Timer0_ISR:
 void TC0_Handler(void){
-  ra_atual = captureRA(); //leitura do registrador RA
+  ra_atual = ecu_diant_timer0_captureRA(); //leitura do registrador RA
   tc_sr = *pTC_SR0; //leitura do registrador de status para permitir o processador retornara pra thread mode
 }
 

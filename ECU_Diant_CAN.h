@@ -61,21 +61,21 @@ can_mb_conf_t can_mailbox_rx_b;                //mailbox rx_b
 //                             Funções
 //********************************************************************************
 
-/* uint32_t joinToSend
+/* uint32_t ecu_diant_can_join_to_send
  *  Agrupa duas variaveis de 16 bits em uma de 32 bits e retorna o valor desta variavel
 */
-uint32_t joinToSend(uint16_t var_2, uint16_t var_1){
+uint32_t ecu_diant_can_join_to_send(uint16_t var_2, uint16_t var_1){
   uint32_t retval;
   retval = (uint32_t)(var_2);
   retval = (retval << 16) | (var_1);
   return retval;
 }
 
-/* uint16_t splitToRead
+/* uint16_t ecu_diant_can_split_to_read
  *  Seleciona o dado nos registradores de dados das mailboxes de recepcao.
  *  uint8_t pos = varia de 0 a 2 e indica qual dado deve ser selecionado
 */
-uint16_t splitToRead(uint8_t pos){
+uint16_t ecu_diant_can_split_to_read(uint8_t pos){
   uint16_t retval;
 
   switch(pos) {
@@ -110,27 +110,27 @@ uint16_t splitToRead(uint8_t pos){
 }
 
 
-void data_monitoring(){
+void ecu_diant_can_data_monitoring(){
   //Mailbox de transmissão:
   Serial.print("TX: ");
   Serial.println(send_status);
 
   //Mailboxes de recepção:
   Serial.print("VT: ");
-  Serial.println(splitToRead(0));
+  Serial.println(ecu_diant_can_split_to_read(0));
   Serial.print("RPM: ");
-  Serial.println(splitToRead(1));
+  Serial.println(ecu_diant_can_split_to_read(1));
   Serial.print("TEMPT: ");
-  Serial.println(splitToRead(2));
+  Serial.println(ecu_diant_can_split_to_read(2));
   Serial.print("PRESST: ");
-  Serial.println(splitToRead(3));
+  Serial.println(ecu_diant_can_split_to_read(3));
   Serial.print("COMB: ");
-  Serial.println(splitToRead(4));
+  Serial.println(ecu_diant_can_split_to_read(4));
   Serial.println("");
 
 }
 
-void can_monitoring(){
+void ecu_diant_can_can_monitoring(){
   //Mailbox de transmissão:
   Serial.print("TX: ");
   Serial.println(send_status);
@@ -150,7 +150,7 @@ void can_monitoring(){
   Serial.println("");
 }
 
-void canStatus(){
+void ecu_diant_can_status(){
   Serial.println(*pCAN_SR, HEX);
 }
 

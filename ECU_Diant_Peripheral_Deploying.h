@@ -29,7 +29,7 @@
 //                             Funções
 //********************************************************************************  
 uint32_t ler_adc(){
-  return adcRead();
+  return ecu_diant_adc_read_last_converted();
 }
 
 uint32_t ler_timer_0_counter(){

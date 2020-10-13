@@ -1,5 +1,6 @@
 /* ECU_Diant_ADC.h
- *  Implementação do conversor AD, destinado à leitura da pressão de linha de freio.
+ *  Implementação do conversor AD, destinado à leitura da pressão de linha de 
+ *  freio e temperatura dos discos dianteiros.
  *  Autor: Everton A. Gomes
  *  Data: 19/09/2020
 */
@@ -90,10 +91,12 @@
 #ifndef _ECU_DIANT_ADC_H
 #define _ECU_DIANT_ADC_H
 
-//Adc myADC; //struct ADC
-
+//********************************************************************************
+//                             #includes
+//********************************************************************************
 
 #include "ECU_Diant_PIO.h"
+#include "ECU_Diant_PMC.h"
 
 
 //********************************************************************************
@@ -123,6 +126,7 @@
 #define ADC_CH13            0x0D        //Channel 13 index
 #define ADC_CH14            0x0E        //Channel 14 index
 #define ADC_CH15            0x0F        //Channel 15 index
+#define ADC_CH0_PIN         2           //Pin from port A for ADC channel 0 (analog input 7)
 #define ADC_CH10_PIN        17          //Pin from Port B for ADC channel 10 (analong input 8) 
 
 //********************************************************************************
@@ -166,7 +170,7 @@
 #define ADC_WPMR    REG_ADC_WPMR    //Write Protect Mode Register
 #define ADC_WPSR    REG_ADC_WPSR    //Write Protect Status Register 
 #define PIOA_PDR    REG_PIOA_PDR    //PIO Disable Register
-#define PMC_PCER1   REG_PMC_PCER1   //PMC Peripheral Clock Enable Register 0
+//#define PMC_PCER1   REG_PMC_PCER1   //PMC Peripheral Clock Enable Register 0
 
 
 uint32_t *pADC_CDR10 = (uint32_t*)ADC_CDR10;
@@ -176,18 +180,17 @@ uint32_t *pADC_CDR10 = (uint32_t*)ADC_CDR10;
 //********************************************************************************
 
 
-void pioAdcConfig(){
-  PIOA_PDR |= 0x01 << 2; //Habilita o pino PA2 para ser controlado pelo periférico (ADC)
+void ecu_diant_adc_pio_config(){
+  //PIOA_PDR |= 0x01 << 2; //Habilita o pino PA2 para ser controlado pelo periférico (ADC)
+  ecu_diant_pioa_disable_pin_controlling(ADC_CH0_PIN);   //Habilita o pino PA2 (canal 0, entrada analógica 7) para ser controlado pelo AD
   ecu_diant_piob_disable_pin_controlling(ADC_CH10_PIN);  //Habilita o pino PB17 (canal 10, entrada analógica 8) para ser controlado pelo AD
-  //PIOB_ABSR |= 0x01 << 25;  //Configura a função periférica do pino
 }
 
-void adcConfig(){
-  pioAdcConfig();
+void ecu_diant_adc_config(){
+  ecu_diant_adc_pio_config();
 
-  PMC_PCER1 |= (0x01 << ADC_ID); //habilita o clock do ADC no controlador PMC
-  
-  //ADC_WPMR = (ADC_WPKEY << 8) | (0x00 << 0); //Disables write protect
+  //PMC_PCER1 |= (0x01 << ADC_ID); //habilita o clock do ADC no controlador PMC
+  ecu_diant_pmc_enable_periph_clock(ADC_ID);
 
   //Setting ADC_MR Register:
   ADC_MR |= 0x00 << 0; //Hardware triggers are disabled, trigger can be made only by software
@@ -198,19 +201,28 @@ void adcConfig(){
   ADC_MR |= TRACKTIM << 24; //Setting tracking time
   ADC_MR |= TRANSFER << 28; //Setting transfer time
 
-  ADC_CHER |= 1 << ADC_CH0;        //Habilita canal 0 -> analog input 7
-  ADC_CHER |= 1 << ADC_CH10;          //Habilita canal 10 -> analog input 8
-
+  #ifdef ENABLE_PERIPHERAL_DEPLOYING
+    ADC_CHER |= 1 << ADC_CH0;        //Habilita canal 0 -> analog input 7
+    ADC_CHER |= 1 << ADC_CH10;       //Habilita canal 10 -> analog input 8
+  #endif
+  
   ADC_CGR = 0; //All channels have gain 1
   ADC_COR |= 0x00 << 16; //Enable single ended mode for channel 0
 
   ADC_EMR |= 0x01 << 24; //Enables TAG option 
   
-  //ADC_CR = 1; //Resets the ADC simulating a hardware reset
-  ADC_CR |= 1 << 1; //Begins ADC conversion
 }
 
-uint16_t adcRead(){
+
+void ecu_diant_adc_enable_channel(uint8_t ch){
+  ADC_CHER |= 1 << ch;
+}
+
+
+/* ecu_diant_adc_read_last_converted()
+ *  Retorna o último valor convertido pelo ADC, armazenado no registrador ADC_LCDR.
+ */
+uint16_t ecu_diant_adc_read_last_converted(){
   uint16_t current_value = 0;
   ADC_CR |= 1 << 1; //Begins ADC conversion
   //If the current channel in ADC_LCDR is CH0, the ADC_LCDR value is returned
@@ -227,10 +239,10 @@ uint16_t adcRead(){
 
 
 /*
- * adcReadChannel(uint8_t ch)
+ * ecu_diant_adc_read_channel(uint8_t ch)
  * Retorna o valor do canal <ch> do ADC. Obrigatoriamente <ch> deve estar em formato hexadecimal.
  */
-uint16_t adcReadChannel(uint8_t ch){
+uint16_t ecu_diant_adc_read_channel(uint8_t ch){
   
   uint32_t *pADC_channel_register = (uint32_t*)(ADC_BASE_ADDRESS + 0x50 + 4*ch);    //determinando o endereço do registrador do canal a ser lido
   //uint32_t *pADC_channel_register = (uint32_t*)(ADC_BASE_ADDRESS + 0x50);    //determinando o endereço do registrador de dados do canal 0

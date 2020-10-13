@@ -9,6 +9,7 @@
 
 
 #include "ECU_Diant_PIO.h"
+#include "ECU_Diant_PMC.h"
 
 //********************************************************************************
 //                             #defines
@@ -74,11 +75,11 @@ uint32_t *pTC_IER0 = (uint32_t*)(TC_IER0);
 uint32_t *pTC_IDR0 = (uint32_t*)(TC_IDR0);
 uint32_t *pTC_WPMR0 = (uint32_t*)(TC_WPMR0);
 
-//Ponteiros de registradores - PMC
-uint32_t *pPMC_PCER0 = (uint32_t*)(PMC_PCER0);
-uint32_t *pPMC_PCER1 = (uint32_t*)(PMC_PCER1);
-uint32_t *pPMC_PCSR0 = (uint32_t*)(PMC_PCSR0);
-uint32_t *pPMC_SR    = (uint32_t*)(PMC_SR);
+////Ponteiros de registradores - PMC
+//uint32_t *pPMC_PCER0 = (uint32_t*)(PMC_PCER0);
+//uint32_t *pPMC_PCER1 = (uint32_t*)(PMC_PCER1);
+//uint32_t *pPMC_PCSR0 = (uint32_t*)(PMC_PCSR0);
+//uint32_t *pPMC_SR    = (uint32_t*)(PMC_SR);
 
 //uint32_t *pPIOB_PDR = (uint32_t*)(PIOB_PDR);
 uint32_t *pPIOB_ABSR = (uint32_t*)(PIOB_ABSR);
@@ -97,17 +98,17 @@ uint32_t raValue = 0, rbValue = 0; //variáveis de leitura dos registradores RA 
 //                             Funções
 //********************************************************************************
 
-void unableWriteProtection_timer0(){
+void ecu_diant_timer0_unable_write_protection(){
   //Timer 0:
   *pTC_WPMR0 |= (WPKEY << 8); //insere a chave de proteção de escrita
   *pTC_WPMR0 &= ~(0x01 << 0); //desabilita a proteção de escrita
 }
 
 
-/* void pioConfig()
+/* void ecu_diant_timer0_pio_config()
  *  Configuração do pino de entrada do sinal (PB25)
 */
-void pioConfig(){
+void ecu_diant_timer0_pio_config(){
   
   //Configuração de portas I/O para o timer 0
   
@@ -130,18 +131,19 @@ void enablePMCclock(uint8_t id){
 }
 
 
-/* void tc0config()
+/* void ecu_diant_timer0_config()
  *  Configuração do Timer_0
 */
-void tc0config(){
-  //*pPMC_PCER0 |= TC0_ID; //habilita o clock do Timer Counter 0 no controlador PMC
-  enablePMCclock(TC0_ID);
-  pioConfig(); //configura pino de entrada do sinal
+void ecu_diant_timer0_config(){
+  //enablePMCclock(TC0_ID);
+  ecu_diant_pmc_enable_periph_clock(TC0_ID);  //habilita o clock do Timer 0
+  
+  ecu_diant_timer0_pio_config(); //configura pino de entrada do sinal
   
   //Configurando canal 0:
   *pTC_CCR0 |= CLKEN; //seta o bit CLKEN para habilitar o clock
   *pTC_CCR0 |= 0x01 << 2; //software trigger
-  unableWriteProtection_timer0();
+  ecu_diant_timer0_unable_write_protection();
   *pTC_CMR0 |= CAPT; //configura o TC para modo captura
   *pTC_CMR0 |= TIMER_CLOCK1 << TCCLKS; //seleciona prescaler
 
@@ -152,21 +154,21 @@ void tc0config(){
   *pTC_IDR0 &= ~(1 << 5); //apaga o bit que desabilita a interrupção por RA loading - canal 0
 }
 
-/* void captureConfig()
+/* void ecu_diant_timer0_capturemode_config()
  *  Configuração do modo de captura. O registrador RA é carregado em nível alto,
  *  enquanto RB é carregado em nível baixo.
 */
-void captureConfig(){
+void ecu_diant_timer0_capturemode_config(){
   //Timer_0
   *pTC_CMR0 |= 0x01 << 16; //RA é carregado quando é detectada uma borda de subida no sinal em TIOA
   *pTC_CMR0 |= 0x02 << 18; //RB é carregado quando é detectada uma borda de descida no sinal em TIOA
 }
 
 
-/* void captureRA()
+/* void ecu_diant_timer0_captureRA()
  *  Retorna o valor de RA.
 */
-uint32_t captureRA(){
+uint32_t ecu_diant_timer0_captureRA(){
   return *pTC_RA0;
 }
 

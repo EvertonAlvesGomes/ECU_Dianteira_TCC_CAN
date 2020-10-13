@@ -22,6 +22,7 @@
 #define PIOC_PID                          13                //PIO C peripheral identifier
 
 //Endereços de registradores:
+#define PIOA_PDR                          REG_PIOA_PDR      //PIO A Disable Register
 #define PIOB_PER                          0x400E1000        //PIO B enable register
 #define PIOB_PDR                          0x400E1004        //PIO B disable register
 #define PIOC_PER                          0x400E1200        //PIO C enable register
@@ -54,6 +55,13 @@ uint32_t *pPIOC_PDSR = (uint32_t*)(PIOC_PDSR);
 void ecu_diant_pio_init(){
   ecu_tras_pmc_enable_periph_clock(PIOC_PID);
 }*/
+
+/* ecu_diant_pioa_disable_pin_controlling(uint8_t pin)
+ *  Desabilita o controlador PIOA controlar o pino "pin", habilitando o controle de periféricos sobre esse pino.
+*/
+void ecu_diant_pioa_disable_pin_controlling(uint8_t pin){
+  PIOA_PDR |= 1 << pin;
+}
 
 /* ecu_diant_piob_enable_pin_controlling(uint8_t pin)
  *  Habilita o controlador PIOB controlar o pino "pin", desabilitando o controle de periféricos sobre esse pino.
